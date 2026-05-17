@@ -1,5 +1,5 @@
 streamlit
 pymupdf
-google-generativeai
+google-genai
 openrouter
 python-dotenv

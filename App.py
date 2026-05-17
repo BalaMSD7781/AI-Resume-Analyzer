@@ -2,7 +2,7 @@
 
 import streamlit as st
 import fitz
-import google.generativeai as genai
+from google.genai import Client
 import os
 import requests
 from dotenv import load_dotenv
@@ -14,10 +14,9 @@ GEMINI_API_KEY = st.secrets.get("API_KEY") or os.getenv("API_KEY")
 if not GEMINI_API_KEY:
     st.error("Gemini API key is missing. Set API_KEY in Streamlit secrets or .env.")
     st.stop()
-genai.configure(api_key=GEMINI_API_KEY)
 
-# Initialize Gemini Model
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Initialize Gemini Client
+client = Client(api_key=GEMINI_API_KEY)
 
 # OpenRouter API Configuration
 OPENROUTER_API_KEY = (st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY") or "").strip()
@@ -81,7 +80,10 @@ def analyze_resume_percentage(text, job_description):
     4. Keep it short and straigh to the point.
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
@@ -101,7 +103,10 @@ def analyze_resume_missing_skills(text, job_description):
     Highlight all the skills that are listed in the job description but are missing from the resume. Do not follow up with a justification or explanation.
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
@@ -121,7 +126,10 @@ def generate_cover_letter(text, job_description):
     Draft a cover letter that considers both the resume and the job description.The tone of the letter drafted must be convincing and ambitious.
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
@@ -141,7 +149,10 @@ def generate_about_me(text, job_description):
     Draft a first-person narrative "About Me" section that the user can use to introduce themselves in an interview. Consider both the resume and the job description to give the best possible introduction.
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
