@@ -2,3 +2,4 @@ streamlit
 pymupdf
 google-generativeai
 openrouter
+python-dotenv

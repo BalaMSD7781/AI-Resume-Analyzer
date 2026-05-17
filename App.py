@@ -5,15 +5,22 @@ import fitz
 import google.generativeai as genai
 import os
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set Gemini API Key
-genai.configure(api_key=st.secrets["API_KEY"])
+GEMINI_API_KEY = st.secrets.get("API_KEY") or os.getenv("API_KEY")
+if not GEMINI_API_KEY:
+    st.error("Gemini API key is missing. Set API_KEY in Streamlit secrets or .env.")
+    st.stop()
+genai.configure(api_key=GEMINI_API_KEY)
 
 # Initialize Gemini Model
 model = genai.GenerativeModel("gemini-2.0-flash")
 
 # OpenRouter API Configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_KEY = (st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY") or "").strip()
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def extract_text_from_pdf(file):
@@ -26,9 +33,15 @@ def extract_text_from_pdf(file):
 def get_openrouter_response(prompt):
     """Fallback method to get response from OpenRouter API"""
     try:
+        if not OPENROUTER_API_KEY:
+            st.error("OpenRouter fallback failed: OPENROUTER_API_KEY is missing.")
+            return ""
+
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:8501",
+            "X-Title": "AI Resume Analyzer"
         }
         
         payload = {
