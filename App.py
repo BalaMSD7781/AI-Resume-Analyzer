@@ -4,6 +4,7 @@ import streamlit as st
 import fitz
 import google.generativeai as genai
 import os
+import requests
 
 # Set Gemini API Key
 genai.configure(api_key=st.secrets["API_KEY"])
@@ -11,12 +12,44 @@ genai.configure(api_key=st.secrets["API_KEY"])
 # Initialize Gemini Model
 model = genai.GenerativeModel("gemini-2.0-flash")
 
+# OpenRouter API Configuration
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
 def extract_text_from_pdf(file):
     text = ""
     doc = fitz.open(stream=file.read(), filetype="pdf")
     for page in doc:
         text += page.get_text()
     return text
+
+def get_openrouter_response(prompt):
+    """Fallback method to get response from OpenRouter API"""
+    try:
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "openrouter/auto",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.7
+        }
+        
+        response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        return result.get("choices", [{}])[0].get("message", {}).get("content", "")
+    except Exception as e:
+        st.error(f"OpenRouter fallback failed: {str(e)}")
+        return ""
 
 def analyze_resume_percentage(text, job_description):
     prompt = f"""
@@ -34,8 +67,12 @@ def analyze_resume_percentage(text, job_description):
     3. Then give suggestions on how to improve the resume to get a better match.
     4. Keep it short and straigh to the point.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
+        return get_openrouter_response(prompt)
 
 def analyze_resume_missing_skills(text, job_description):
     prompt = f"""
@@ -50,8 +87,12 @@ def analyze_resume_missing_skills(text, job_description):
     Provide the following:
     Highlight all the skills that are listed in the job description but are missing from the resume. Do not follow up with a justification or explanation.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
+        return get_openrouter_response(prompt)
 
 def generate_cover_letter(text, job_description):
     prompt = f"""
@@ -66,8 +107,12 @@ def generate_cover_letter(text, job_description):
     Provide the following:
     Draft a cover letter that considers both the resume and the job description.The tone of the letter drafted must be convincing and ambitious.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
+        return get_openrouter_response(prompt)
 
 def generate_about_me(text, job_description):
     prompt = f"""
@@ -82,8 +127,12 @@ def generate_about_me(text, job_description):
     Provide the following:
     Draft a first-person narrative "About Me" section that the user can use to introduce themselves in an interview. Consider both the resume and the job description to give the best possible introduction.
     """
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.warning(f"Gemini failed, using OpenRouter fallback: {str(e)}")
+        return get_openrouter_response(prompt)
 
 # Streamlit UI
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📝")
