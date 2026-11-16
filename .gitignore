@@ -1,7 +1,13 @@
+# Secrets
+.env
 .streamlit/secrets.toml
 
+# Environments
 venv/
-.env/
+.venv/
 
+# Python
+__pycache__/
+*.pyc
 
 *.db

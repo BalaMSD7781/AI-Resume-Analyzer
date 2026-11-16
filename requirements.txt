@@ -1,5 +1,5 @@
 streamlit
 pymupdf
 google-genai
-openrouter
+requests
 python-dotenv
